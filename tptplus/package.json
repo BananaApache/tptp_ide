@@ -1,0 +1,61 @@
+{
+  "name": "tptplus",
+  "displayName": "TPTPlus",
+  "description": "Syntax highlighting and error detection for TPTP language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./client/out/extension",
+  "contributes": {
+    "languages": [{
+      "id": "tptp",
+      "aliases": ["tptp", "TPTP"],
+      "extensions": [".p", ".s"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "tptp",
+      "scopeName": "source.tptp",
+      "path": "./syntaxes/tptp.tmLanguage.json"
+    }],
+    "configuration": {
+      "type": "object",
+      "title": "TPTP Language Server Configuration",
+      "properties": {
+        "tptpLanguageServer.maxNumberOfProblems": {
+          "scope": "resource",
+          "type": "number",
+          "default": 100,
+          "description": "Controls the maximum number of problems produced by the server."
+        },
+        "tptpLanguageServer.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+    "test": "sh ./scripts/e2e.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.34",
+    "@types/vscode": "^1.100.0",
+    "typescript": "^5.1.3"
+  }
+}

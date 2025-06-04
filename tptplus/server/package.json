@@ -1,0 +1,13 @@
+{
+  "name": "tptp-server",
+  "description": "TPTP language server",
+  "version": "1.0.0",
+  "dependencies": {
+    "vscode-languageserver": "^8.1.0",
+    "vscode-languageserver-textdocument": "^1.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.34",
+    "typescript": "^5.1.3"
+  }
+}
