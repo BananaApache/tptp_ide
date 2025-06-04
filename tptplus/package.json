@@ -1,8 +1,13 @@
 {
-  "name": "tptp_editor",
+  "name": "tptpeditor",
   "displayName": "TPTP Editor",
+  "publisher": "DE",
   "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.0.1",
+  "version": "0.0.3",
+  "icon": "images/TPTPWorld.png",
+  "activationEvents": [
+    "onLanguage:tptp"
+  ],
   "engines": {
     "vscode": "^1.100.0"
   },

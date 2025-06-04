@@ -1,65 +1,55 @@
-# tptplus README
+# TPTP Editor
 
-This is the README for your extension "tptplus". After writing up a brief description, we recommend including the following sections.
+TPTP Editor is a Visual Studio Code extension that provides syntax highlighting for the [TPTP](http://www.tptp.org/) language — used in automated theorem proving and formal logic research.
+(Built by Daniel Li and Esteban Morales assisting Dr. Geoff Sutcliffe)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Syntax highlighting for `.p` and `.s` files
+- Support for:
+  - Single-line `%` comments
+  - Quoted strings
+  - Logical operators and quantifiers
+  - `$`-prefixed system constants
+  - TPTP directives like `fof`, `cnf`, `thf`, etc.
+- Clean and consistent token coloring across themes
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+No dependencies required — just install and start editing `.p` or `.s` files.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+This extension does not contribute any custom settings.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
+Initial release with base syntax support for TPTP problem files.
 
-Initial release of ...
+### 0.0.2
 
-### 1.0.1
+Updated logo and extension image. Changed README.
 
-Fixed issue #.
+### 0.0.3
 
-### 1.1.0
-
-Added features X, Y, and Z.
+Added Change Log. Removed Known Issues.
 
 ---
 
-## Working with Markdown
+## For TPTP Language
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+The Thousands of Problems for Theorem Provers (TPTP) format is widely used in logic and automated reasoning. Learn more at [http://www.tptp.org](http://www.tptp.org)
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+---
 
-## For more information
+## Development Notes
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- Grammar implemented via a `tmLanguage.json` file
+- Uses TextMate scopes compatible with popular VS Code themes
+- Lexer/grammar derived from an existing [ANTLR4 TPTP grammar](http://www.tptp.org/TPTP/SyntaxBNF.html)
 
-**Enjoy!**
+---
+
+**Enjoy using TPTP Editor!**
