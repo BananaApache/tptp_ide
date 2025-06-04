@@ -1,6 +1,6 @@
 {
-  "name": "tptplus",
-  "displayName": "TPTPlus",
+  "name": "tptp_editor",
+  "displayName": "TPTP Editor",
   "description": "Syntax highlighting and error detection for TPTP language",
   "version": "0.0.1",
   "engines": {
