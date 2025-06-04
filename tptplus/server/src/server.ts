@@ -1,4 +1,4 @@
-// server.ts - TPTP Language Server
+// server.ts – TPTP Language Server
 import {
   createConnection,
   TextDocuments,
@@ -74,32 +74,112 @@ connection.onInitialized(() => {
 class TPTPValidator {
   private diagnostics: Diagnostic[] = [];
 
-  validateDocument(textDocument: TextDocument): Diagnostic[] {
+  public validateDocument(textDocument: TextDocument): Diagnostic[] {
     this.diagnostics = [];
-    const text = textDocument.getText();
-    const lines = text.split('\n');
+    const rawLines = textDocument.getText().split(/\r?\n/);
 
-    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
-      const line = lines[lineNum].trim();
-      if (line === '' || line.startsWith('%')) continue;
+    let buffer = "";
+    let insideFormula = false;
+    let startLine = 0;
 
-      this.validateLine(line, lineNum, textDocument);
+    for (let i = 0; i < rawLines.length; i++) {
+      const raw = rawLines[i];
+      const line = raw.trim();
+
+      // 1) If the line is empty or a “%…” comment, skip unless we are already building a buffer
+      if (line === "" || line.startsWith("%")) {
+        if (insideFormula) {
+          // preserve one space so that tokens don’t run together
+          buffer += " ";
+        }
+        continue;
+      }
+
+      // NEW: if we are already insideFormula, but this new trimmed line ALSO looks like the start of a fresh formula,
+      // then we must first “flush” the old buffer (it never ended with a period).
+      if (insideFormula && this.isFormulaLine(line)) {
+        // The old buffer never saw “endsWith('.')” with balanced parentheses → missing-period
+        const trimmedOld = buffer.trimEnd();
+        this.diagnostics.push({
+          severity: DiagnosticSeverity.Error,
+          range: {
+            start: { line: startLine, character: trimmedOld.length },
+            end:   { line: startLine, character: trimmedOld.length }
+          },
+          message: 'TPTP formula must end with a period (.)',
+          source: 'tptp-lsp'
+        });
+        // Reset and fall through so that this line becomes the start of the new formula
+        insideFormula = false;
+        buffer = "";
+      }
+
+      // 2) If we are not yet inside a formula, check if this trimmed line is the start of one
+      if (!insideFormula) {
+        if (this.isFormulaLine(line) || this.isIncludeLine(line)) {
+          insideFormula = true;
+          startLine = i;
+          buffer = line;
+        } else {
+          // not a formula’s first line; ignore entirely
+          continue;
+        }
+      }
+      else {
+        // 3) We are already collecting lines: append a space + trimmed text
+        buffer += " " + line;
+      }
+
+      // 4) Now check if “buffer” is complete: it must end with a period AND parentheses must balance.
+      const trimmedBuffer = buffer.trimEnd();
+      const parenCheck = this.checkParenthesesBalance(trimmedBuffer);
+
+      if (trimmedBuffer.endsWith(".") && !parenCheck.error) {
+        // We have a complete formula (or include). Dispatch to validateFormula or validateInclude,
+        // always using startLine as the line number for diagnostics.
+
+        if (this.isFormulaLine(trimmedBuffer)) {
+          this.validateFormula(trimmedBuffer, startLine, textDocument);
+        }
+        else if (this.isIncludeLine(trimmedBuffer)) {
+          this.validateInclude(trimmedBuffer, startLine, textDocument);
+        }
+
+        // Reset for next formula
+        insideFormula = false;
+        buffer = "";
+      }
+      // else keep accumulating until we see “.)” with balanced parentheses
+    }
+
+    // 5) If we hit EOF while still “insideFormula,” do one final validation call
+    if (insideFormula && buffer.trim() !== "") {
+      const trimmedBuffer = buffer.trimEnd();
+      // We know it never saw “endsWith('.')” earlier, so we must report missing-period now:
+      if (!trimmedBuffer.endsWith(".")) {
+        this.diagnostics.push({
+          severity: DiagnosticSeverity.Error,
+          range: {
+            start: { line: startLine, character: trimmedBuffer.length },
+            end:   { line: startLine, character: trimmedBuffer.length }
+          },
+          message: 'TPTP formula must end with a period (.)',
+          source: 'tptp-lsp'
+        });
+      }
+      // Then still attempt the remaining structural checks if it did end with “.” but was unbalanced, etc.
+      if (this.isFormulaLine(trimmedBuffer)) {
+        this.validateFormula(trimmedBuffer, startLine, textDocument);
+      } else if (this.isIncludeLine(trimmedBuffer)) {
+        this.validateInclude(trimmedBuffer, startLine, textDocument);
+      }
     }
 
     return this.diagnostics;
   }
 
-  private validateLine(line: string, lineNum: number, document: TextDocument) {
-    // Check for TPTP formula structure
-    if (this.isFormulaLine(line)) {
-      this.validateFormula(line, lineNum, document);
-    } else if (this.isIncludeLine(line)) {
-      this.validateInclude(line, lineNum, document);
-    }
-  }
-
   private isFormulaLine(line: string): boolean {
-    return /^(thf|tff|fof|cnf)\s*\(/.test(line);
+    return /^(tpi|thf|tff|tcf|fof|cnf)\s*\(/.test(line);
   }
 
   private isIncludeLine(line: string): boolean {
@@ -107,205 +187,199 @@ class TPTPValidator {
   }
 
   private validateFormula(line: string, lineNum: number, document: TextDocument) {
-    // Check if formula ends with period
-    if (!line.endsWith('.')) {
-      const diagnostic: Diagnostic = {
+    // 1) Trim trailing whitespace/newlines before checking “endsWith('.')”
+    const trimmedLine = line.trimEnd();
+
+    // If it does not end in '.', we already reported above. Now run the rest of the checks on trimmedLine:
+    if (!trimmedLine.endsWith(".")) {
+      // (This branch is rarely reached here because the “missing-period” was already emitted above,
+      //  but we keep it for completeness.)
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
-          start: { line: lineNum, character: line.length },
-          end: { line: lineNum, character: line.length }
+          start: { line: lineNum, character: trimmedLine.length },
+          end:   { line: lineNum, character: trimmedLine.length }
         },
         message: 'TPTP formula must end with a period (.)',
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
 
-    // First check if it starts with a valid TPTP type
-    const typeMatch = line.match(/^(thf|tff|fof|cnf)\s*/);
+    // 2) Check it starts with a valid TPTP type
+    const typeMatch = trimmedLine.match(/^(tpi|thf|tff|tcf|fof|cnf)\s*/);
     if (!typeMatch) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: 0 },
-          end: { line: lineNum, character: line.length }
+          end:   { line: lineNum, character: trimmedLine.length }
         },
         message: 'TPTP formula must start with thf, tff, fof, or cnf',
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
       return;
     }
 
     const type = typeMatch[1];
-    const afterType = line.substring(typeMatch[0].length);
-
-    // Check if there's an opening parenthesis immediately after the type
+    const afterType = trimmedLine.substring(typeMatch[0].length);
     if (!afterType.startsWith('(')) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: typeMatch[0].length },
-          end: { line: lineNum, character: typeMatch[0].length + 1 }
+          end:   { line: lineNum, character: typeMatch[0].length + 1 }
         },
         message: `Missing opening parenthesis after '${type}'`,
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
       return;
     }
 
-    // Check for balanced parentheses
-    const parenBalance = this.checkParenthesesBalance(line);
+    // 3) Check for balanced parentheses
+    const parenBalance = this.checkParenthesesBalance(trimmedLine);
     if (parenBalance.error) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: parenBalance.position },
-          end: { line: lineNum, character: parenBalance.position + 1 }
+          end:   { line: lineNum, character: parenBalance.position + 1 }
         },
         message: parenBalance.message,
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
       return;
     }
 
-    // Check formula structure: type(name, role, formula).
-    const formulaMatch = line.match(/^(thf|tff|fof|cnf)\s*\(\s*([^,\s]+)\s*,\s*([^,\s]+)\s*,\s*(.+)\)\s*\.?\s*$/);
+    // 4) Check the overall structure “type(name, role, formula).”
+    const formulaMatch = trimmedLine.match(
+      /^(tpi|thf|tff|tcf|fof|cnf)\s*\(\s*([^,\s]+)\s*,\s*([^,\s]+)\s*,\s*(.+)\)\s*\.\s*$/
+    );
     if (!formulaMatch) {
-      // More specific error messages
-      if (line.includes(',')) {
-        // Has commas but wrong structure
-        const diagnostic: Diagnostic = {
+      if (trimmedLine.includes(",")) {
+        this.diagnostics.push({
           severity: DiagnosticSeverity.Error,
           range: {
             start: { line: lineNum, character: 0 },
-            end: { line: lineNum, character: line.length }
+            end:   { line: lineNum, character: trimmedLine.length }
           },
           message: 'Invalid TPTP formula structure. Expected: type(name, role, formula).',
           source: 'tptp-lsp'
-        };
-        this.diagnostics.push(diagnostic);
+        });
       } else {
-        // Missing commas entirely
-        const diagnostic: Diagnostic = {
+        this.diagnostics.push({
           severity: DiagnosticSeverity.Error,
           range: {
             start: { line: lineNum, character: 0 },
-            end: { line: lineNum, character: line.length }
+            end:   { line: lineNum, character: trimmedLine.length }
           },
           message: 'TPTP formula must have format: type(name, role, formula). Missing commas or parentheses.',
           source: 'tptp-lsp'
-        };
-        this.diagnostics.push(diagnostic);
+        });
       }
       return;
     }
 
-    const [, , name, role, formula] = formulaMatch;
+    const [, , name, role, formulaBody] = formulaMatch;
 
-    // Validate role
+    // 5) Validate “role” (just warn if it’s not in the known list)
     const validRoles = [
-      'axiom', 'hypothesis', 'definition', 'assumption', 'lemma', 'theorem',
-      'corollary', 'conjecture', 'negated_conjecture', 'plain', 'type',
-      'fi_domain', 'fi_functors', 'fi_predicates', 'unknown'
+      'axiom','hypothesis','definition','assumption','lemma','theorem',
+      'corollary','conjecture','negated_conjecture','plain','type',
+      'fi_domain','fi_functors','fi_predicates','unknown'
     ];
-
     if (!validRoles.includes(role)) {
-      const roleStart = line.indexOf(role);
-      const diagnostic: Diagnostic = {
+      const roleStart = trimmedLine.indexOf(role);
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Warning,
         range: {
           start: { line: lineNum, character: roleStart },
-          end: { line: lineNum, character: roleStart + role.length }
+          end:   { line: lineNum, character: roleStart + role.length }
         },
         message: `Unknown TPTP role '${role}'. Valid roles: ${validRoles.join(', ')}`,
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
 
-    // Check for common syntax errors in formula
-    this.validateFormulaContent(formula, lineNum, line.indexOf(formula), document);
+    // 6) Finally check inside the formula body for unmatched quotes, invalid operator sequences, etc.
+    this.validateFormulaContent(
+      formulaBody,
+      lineNum,
+      trimmedLine.indexOf(formulaBody),
+      document
+    );
   }
 
   private validateFormulaContent(formula: string, lineNum: number, startChar: number, document: TextDocument) {
-    // Check for unmatched quotes
+    // Check for unmatched single quotes
     const singleQuotes = (formula.match(/'/g) || []).length;
-    const doubleQuotes = (formula.match(/"/g) || []).length;
-
     if (singleQuotes % 2 !== 0) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: startChar },
-          end: { line: lineNum, character: startChar + formula.length }
+          end:   { line: lineNum, character: startChar + formula.length }
         },
         message: 'Unmatched single quote in formula',
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
 
+    // Check for unmatched double quotes
+    const doubleQuotes = (formula.match(/"/g) || []).length;
     if (doubleQuotes % 2 !== 0) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: startChar },
-          end: { line: lineNum, character: startChar + formula.length }
+          end:   { line: lineNum, character: startChar + formula.length }
         },
         message: 'Unmatched double quote in formula',
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
 
-    // Check for invalid operators
+    // Check for invalid operator sequences (e.g. “&&&”, “===”, “~~”)
     const invalidOperators = formula.match(/[&|]{3,}|={3,}|~{2,}/g);
     if (invalidOperators) {
       invalidOperators.forEach(op => {
         const opIndex = formula.indexOf(op);
-        const diagnostic: Diagnostic = {
+        this.diagnostics.push({
           severity: DiagnosticSeverity.Error,
           range: {
             start: { line: lineNum, character: startChar + opIndex },
-            end: { line: lineNum, character: startChar + opIndex + op.length }
+            end:   { line: lineNum, character: startChar + opIndex + op.length }
           },
           message: `Invalid operator sequence: ${op}`,
           source: 'tptp-lsp'
-        };
-        this.diagnostics.push(diagnostic);
+        });
       });
     }
   }
 
   private validateInclude(line: string, lineNum: number, document: TextDocument) {
     if (!line.endsWith('.')) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: line.length },
-          end: { line: lineNum, character: line.length }
+          end:   { line: lineNum, character: line.length }
         },
         message: 'Include statement must end with a period (.)',
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
 
     // Check include syntax: include('filename').
     if (!/^include\s*\(\s*'[^']+'\s*\)\s*\.\s*$/.test(line)) {
-      const diagnostic: Diagnostic = {
+      this.diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: {
           start: { line: lineNum, character: 0 },
-          end: { line: lineNum, character: line.length }
+          end:   { line: lineNum, character: line.length }
         },
         message: "Include statement must have format: include('filename').",
         source: 'tptp-lsp'
-      };
-      this.diagnostics.push(diagnostic);
+      });
     }
   }
 
@@ -404,7 +478,21 @@ connection.onCompletion(
         data: 5,
         insertText: "include('${1:filename}').",
         insertTextFormat: 2
-      }
+      },
+      {
+        label: 'tpi',
+        kind: CompletionItemKind.Keyword,
+        data: 6,
+        insertText: 'tpi(${1:name}, ${2:axiom}, ${3:clause}).',
+        insertTextFormat: 2
+      },
+      {
+        label: 'tcf',
+        kind: CompletionItemKind.Keyword,
+        data: 7,
+        insertText: 'tcf(${1:name}, ${2:axiom}, ${3:clause}).',
+        insertTextFormat: 2
+      },
     ];
   }
 );

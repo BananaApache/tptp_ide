@@ -36,6 +36,10 @@ Updated logo and extension image. Changed README.
 
 Added Change Log. Removed Known Issues.
 
+### 0.0.4
+
+Implemented Multiline reading. Added file icon.
+
 ---
 
 ## For TPTP Language
