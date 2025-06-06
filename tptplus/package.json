@@ -3,7 +3,7 @@
   "displayName": "TPTP Editor",
   "publisher": "DE",
   "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
@@ -46,6 +46,10 @@
       {
         "command": "tptp.proveProblem",
         "title": "TPTP: Prove Problem"
+      },
+      {
+        "command": "tptp.proveProblemMultiple",
+        "title": "TPTP: Prove Problem Using Multiple Provers"
       }
     ],
     "menus": {
@@ -59,6 +63,11 @@
       "editor/context": [
         {
           "command": "tptp.proveProblem",
+          "when": "editorLangId == tptp",
+          "group": "navigation"
+        },
+        {
+          "command": "tptp.proveProblemMultiple",
           "when": "editorLangId == tptp",
           "group": "navigation"
         }

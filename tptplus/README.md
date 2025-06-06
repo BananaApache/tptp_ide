@@ -63,6 +63,10 @@ Implemented problem prover inside editor context menu.
 
 Added continute to option for TPTP Format and IDV Image
 
+### 0.0.8 
+
+Added solving for problems using multiple provers
+
 ---
 
 ## For TPTP Language

@@ -1,8 +1,5 @@
 
 
-
-
-
 %~ This should work fine
 
 

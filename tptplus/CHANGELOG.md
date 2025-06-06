@@ -11,3 +11,4 @@
 - v0.0.5 Added pretty-printing
 - v0.0.6 Implemented problem prover inside editor context menu
 - v0.0.7 Added continute to option for TPTP Format and IDV Image
+- v0.0.8 Added solving for problems using multiple provers
