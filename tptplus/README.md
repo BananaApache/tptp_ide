@@ -1,18 +1,29 @@
 # TPTP Editor
 
-TPTP Editor is a Visual Studio Code extension that provides syntax highlighting for the [TPTP](http://www.tptp.org/) language — used in automated theorem proving and formal logic research.
-(Built by Daniel Li and Esteban Morales assisting Dr. Geoff Sutcliffe)
+TPTP Editor is a Visual Studio Code extension that provides a streamlined development environment for working with the TPTP language — a standard format used extensively in automated theorem proving and formal logic research. 
+
+Built by Daniel Li in collaboration with Dr. Geoff Sutcliffe, the creator of the TPTP library, the extension features full syntax highlighting for both CNF, FOF, THF, etc. formats, enabling clear visual structuring of axioms, hypotheses, and conjectures. It recognizes '.p' & '.s' problem files, supports pretty-printing and safe character escaping, and integrates directly with the SystemOnTPTP + SystemOnTSTP service, allowing users to author, submit, and view solver results without leaving the editor. 
+
+Designed for researchers, students, and logic developers. TPTP Editor enhances productivity and readability in formal logic workflows within the comfort of VS Code.
 
 ## Features
+
+<img src="./images/sample.png" alt="sample image" width="500">
 
 - Syntax highlighting for `.p` and `.s` files
 - Support for:
   - Single-line `%` comments
+  - Block comments `/* ... */`
   - Quoted strings
   - Logical operators and quantifiers
   - `$`-prefixed system constants
   - TPTP directives like `fof`, `cnf`, `thf`, etc.
+  - Various special characters (`~`, `|`, `&`, etc.)
 - Clean and consistent token coloring across themes
+- Real-time error diagnostics and checking
+- Automatically parses and extracts content for submission to theorem provers
+- Pretty-prints TPTP problem content inside the webview for readability
+- Custom file icons for '.p' & '.s' files inside VS Code
 
 ## Requirements
 
@@ -40,11 +51,24 @@ Added Change Log. Removed Known Issues.
 
 Implemented Multiline reading. Added file icon.
 
+### 0.0.5
+
+Added pretty-printing. Fixed newline issue.
+
+### 0.0.6
+
+Implemented problem prover inside editor context menu. 
+
+### 0.0.7
+
+Added continute to option for TPTP Format and IDV Image
+
 ---
 
 ## For TPTP Language
 
-The Thousands of Problems for Theorem Provers (TPTP) format is widely used in logic and automated reasoning. Learn more at [http://www.tptp.org](http://www.tptp.org)
+The Thousands of Problems for Theorem Provers (TPTP) World is the established infrastructure used by the Automated Theorem Proving (ATP) community for research, development, and deployment of ATP systems.
+The TPTP format is widely used in logic and automated reasoning. Learn more at [http://www.tptp.org](http://www.tptp.org)
 
 ---
 
@@ -52,7 +76,9 @@ The Thousands of Problems for Theorem Provers (TPTP) format is widely used in lo
 
 - Grammar implemented via a `tmLanguage.json` file
 - Uses TextMate scopes compatible with popular VS Code themes
-- Lexer/grammar derived from an existing [ANTLR4 TPTP grammar](http://www.tptp.org/TPTP/SyntaxBNF.html)
+- Lexer/grammar derived from an existing [BNF TPTP grammar](https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html)
+- Actively tested against a large sample of problems from the official TPTP problem library
+- Webview-based prover runner panel implemented with custom form UI to prove theorems
 
 ---
 

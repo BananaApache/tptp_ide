@@ -30,7 +30,7 @@
     },
     {
       "name": "string.quoted.single.tptp",
-      "match": "'(?:'|[^'])*'"
+      "match": "'(?:\\\\'|[^'])*'"
     },
     {
       "name": "string.quoted.double.distinct.tptp",

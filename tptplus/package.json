@@ -3,13 +3,14 @@
   "displayName": "TPTP Editor",
   "publisher": "DE",
   "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/BananaApache/tptp_ide"
   },
   "activationEvents": [
+    "onStartupFinished",
     "onLanguage:tptp"
   ],
   "engines": {
@@ -20,19 +21,49 @@
   ],
   "main": "./client/out/extension",
   "contributes": {
-    "languages": [{
-      "id": "tptp",
-      "aliases": ["tptp", "TPTP"],
-      "extensions": [".p", ".s"],
-      "configuration": "./language-configuration.json",
-      "light": "./images/TPTPWorld.png",
-      "dark": "./images/TPTPWorld.png"
-    }],
+    "languages": [
+      {
+        "id": "tptp",
+        "aliases": ["tptp", "TPTP"],
+        "extensions": [".p", ".s"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/TPTPWorld.svg",
+          "dark": "./icons/TPTPWorld.svg"
+        }
+      }
+    ],
     "grammars": [{
       "language": "tptp",
       "scopeName": "source.tptp",
       "path": "./syntaxes/tptp.tmLanguage.json"
     }],
+    "commands": [
+      {
+        "command": "tptp.formatDocument",
+        "title": "TPTP: Format Document"
+      },
+      {
+        "command": "tptp.proveProblem",
+        "title": "TPTP: Prove Problem"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "tptp.formatDocument",
+          "when": "editorLangId == tptp",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "tptp.proveProblem",
+          "when": "editorLangId == tptp",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "TPTP Language Server Configuration",
