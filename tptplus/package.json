@@ -3,7 +3,7 @@
   "displayName": "TPTP Editor",
   "publisher": "DE",
   "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
