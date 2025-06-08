@@ -3,7 +3,7 @@
   "displayName": "TPTP Editor",
   "publisher": "DE",
   "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
@@ -50,6 +50,22 @@
       {
         "command": "tptp.proveProblemMultiple",
         "title": "TPTP: Prove Problem Using Multiple Provers"
+      },
+      {
+        "command": "tptp.processSolution",
+        "title": "TPTP: Process Solution"
+      },
+      {
+        "command": "tptp.processSolutionMultiple",
+        "title": "TPTP: Process Solution Using Multiple Processors"
+      },
+      {
+        "command": "tptp.importProblem",
+        "title": "TPTP: Import TPTP Problem"
+      },
+      {
+        "command": "tptp.importSolution",
+        "title": "TPTP: Import TPTP Solution"
       }
     ],
     "menus": {
@@ -63,12 +79,30 @@
       "editor/context": [
         {
           "command": "tptp.proveProblem",
-          "when": "editorLangId == tptp",
+          "when": "resourceExtname == .p",
           "group": "navigation"
         },
         {
           "command": "tptp.proveProblemMultiple",
-          "when": "editorLangId == tptp",
+          "when": "resourceExtname == .p",
+          "group": "navigation"
+        },
+        {
+          "command": "tptp.processSolution",
+          "when": "resourceExtname == .s",
+          "group": "navigation"
+        },
+        {
+          "command": "tptp.processSolutionMultiple",
+          "when": "resourceExtname == .s",
+          "group": "navigation"
+        },
+        {
+          "command": "tptp.importProblem",
+          "group": "navigation"
+        },
+        {
+          "command": "tptp.importSolution",
           "group": "navigation"
         }
       ]

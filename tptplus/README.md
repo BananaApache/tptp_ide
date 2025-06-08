@@ -67,6 +67,9 @@ Added continute to option for TPTP Format and IDV Image
 
 Added solving for problems using multiple provers
 
+### 0.0.9
+
+Added processing solutions using multiple provers. Added importing problems and solutions
 ---
 
 ## For TPTP Language

@@ -39,6 +39,7 @@ exports.deactivate = deactivate;
 const path = __importStar(require("path"));
 const vscode_1 = require("vscode");
 const vscode = __importStar(require("vscode"));
+const jsdom_1 = require("jsdom");
 const node_1 = require("vscode-languageclient/node");
 let client;
 function activate(context) {
@@ -55,6 +56,7 @@ function activate(context) {
         <meta charset="UTF-8">
         <title>TPTP Prover Options</title>
         <style>
+          .collapsable button { background-color: var(--vscode-activityBar-border) } 
           body {
             font-family: "Inter", sans-serif;
           }
@@ -648,20 +650,99 @@ function activate(context) {
                 <meta charset="UTF-8">
                 <title>TPTP Prover Result</title>
                 <style>
+                  .collapsable button { background-color: var(--vscode-activityBar-border) } 
                   h1 { text-decoration: underline; }
                   h2 { color: var(--vscode-editorLightBulb-foreground); }
                   pre { line-height: 20px; }
-                  body { margin: 10px !important; }
+                  body { margin: 20px !important; }
                   span { background-color: var(--vscode-toolbar-hoverBackground); padding: 5px; border-radius: 10px; }
+                  button {
+                    align-items: center;
+                    appearance: button;
+                    background-color: var(--vscode-focusBorder);
+                    border-radius: 8px;
+                    border-style: none;
+                    box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+                    box-sizing: border-box;
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: row;
+                    flex-shrink: 0;
+                    font-family: "Segoe UI", sans-serif;
+                    font-size: 100%;
+                    line-height: 1.15;
+                    margin: 0;
+                    padding: 10px 13px;
+                    text-align: center;
+                    text-transform: none;
+                    transition:
+                      color 0.13s ease-in-out,
+                      background 0.13s ease-in-out,
+                      opacity 0.13s ease-in-out,
+                      box-shadow 0.13s ease-in-out;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    touch-action: manipulation;
+                  }
                 </style>
               </head>
               <body>
                 <h1>TPTP Prover Result</h1>
                 <h2>Prover: <span>${userData.prover}</span></h2>
-                ${resultHtml}
+
+                ${userData.continueOption === "tptp_format" ? `<button onclick="downloadResult()">Download Solution</button>` : ``}
+                
+                ${resultHtml.replace('Loading IDV ... ', '')}
+
+                <script>
+                  const vscode = acquireVsCodeApi();
+                  function downloadResult() {
+                    const content = document.querySelector('pre').innerText;
+                    vscode.postMessage({command: 'download', content: content});
+                  }
+                </script>
               </body>
               </html>
             `;
+                        resultPanel.webview.onDidReceiveMessage(async (message) => {
+                            if (message.command === 'download') {
+                                const content = message.content;
+                                const docDir = path.dirname(doc.uri.fsPath);
+                                const docBase = path.basename(doc.uri.fsPath);
+                                const defaultName = `${docBase.split(".")[0]}.s`;
+                                let finalUri = vscode.Uri.file(path.join(docDir, defaultName));
+                                try {
+                                    // Check if file exists
+                                    await vscode.workspace.fs.stat(finalUri);
+                                    const choice = await vscode.window.showQuickPick(['Replace', 'Keep Both', 'Cancel'], { placeHolder: `File "${defaultName}" already exists. What do you want to do?` });
+                                    if (choice === 'Cancel' || !choice)
+                                        return;
+                                    if (choice === 'Keep Both') {
+                                        let counter = 1;
+                                        while (true) {
+                                            const candidatePath = path.join(docDir, `${docBase.split(".")[0]} (${counter}).s`);
+                                            const candidateUri = vscode.Uri.file(candidatePath);
+                                            try {
+                                                await vscode.workspace.fs.stat(candidateUri);
+                                                counter++;
+                                            }
+                                            catch {
+                                                finalUri = candidateUri;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    // If Replace, proceed with original finalUri
+                                }
+                                catch {
+                                    // File does not exist — safe to use finalUri
+                                }
+                                const data = new TextEncoder().encode(content);
+                                await vscode.workspace.fs.writeFile(finalUri, data);
+                                vscode.window.showInformationMessage(`Saved to ${finalUri.fsPath}`);
+                            }
+                        });
                     })
                         .catch(error => {
                         console.error('Fetch error:', error);
@@ -674,8 +755,8 @@ function activate(context) {
         });
     });
     context.subscriptions.push(proveProblem);
-    //@                                                                                  
-    //@ RUN A THEOREM (USING MULTIPLE PROVERS)
+    //@                                                                                     
+    //@ RUN A THEOREM (USING MULTIPLE PROVERS)                                              
     const proveProblemMultiple = vscode.commands.registerCommand('tptp.proveProblemMultiple', async (uri) => {
         const doc = await vscode.workspace.openTextDocument(uri);
         const content = doc.getText();
@@ -688,6 +769,7 @@ function activate(context) {
         <meta charset="UTF-8">
         <title>TPTP Provers</title>
         <style>
+          .collapsable button { background-color: var(--vscode-activityBar-border) } 
           body {
             font-family: "Inter", sans-serif;
           }
@@ -1279,17 +1361,49 @@ function activate(context) {
                 <meta charset="UTF-8">
                 <title>TPTP Prover Result</title>
                 <style>
+                  .collapsable button { background-color: var(--vscode-activityBar-border) } 
                   h1 { text-decoration: underline; }
                   h2 { color: var(--vscode-editorLightBulb-foreground); }
                   pre { line-height: 20px; }
-                  body { margin: 10px !important; }
+                  body { margin: 20px !important; }
                   span { background-color: var(--vscode-toolbar-hoverBackground); padding: 5px; border-radius: 10px; }
+                  button {
+                    align-items: center;
+                    appearance: button;
+                    background-color: var(--vscode-focusBorder);
+                    border-radius: 8px;
+                    border-style: none;
+                    box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+                    box-sizing: border-box;
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: row;
+                    flex-shrink: 0;
+                    font-family: "Segoe UI", sans-serif;
+                    font-size: 100%;
+                    line-height: 1.15;
+                    margin: 0;
+                    padding: 10px 13px;
+                    text-align: center;
+                    text-transform: none;
+                    transition:
+                      color 0.13s ease-in-out,
+                      background 0.13s ease-in-out,
+                      opacity 0.13s ease-in-out,
+                      box-shadow 0.13s ease-in-out;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    touch-action: manipulation;
+                  }
                 </style>
               </head>
               <body>
                 <h1>TPTP Prover Result</h1>
-                <h2>Prover: <span>${userData.provers.join(", ")}</span></h2>
-                ${resultHtml}
+                <h2>Prover: <span>${userData.prover}</span></h2>
+                
+                ${resultHtml.replace('Loading IDV ... ', '')}
+                
               </body>
               </html>
             `;
@@ -1306,6 +1420,712 @@ function activate(context) {
     });
     context.subscriptions.push(proveProblemMultiple);
     //@                                                                                  
+    //@ PROCESS SOLUTION                                                                 
+    const processSolution = vscode.commands.registerCommand('tptp.processSolution', async (uri) => {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        const content = doc.getText();
+        const panel = vscode.window.createWebviewPanel('customMenu', 'TPTP Process Solution Options', vscode.ViewColumn.Two, { enableScripts: true } // allow JS
+        );
+        panel.webview.html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>TPTP Process Solution Options</title>
+
+      <style>
+                  .collapsable button { background-color: var(--vscode-activityBar-border) } 
+        body {
+          font-family: "Inter", sans-serif;
+        }
+
+        h1 { 
+          text-decoration: underline; 
+        }
+
+        label {
+          display: flex;
+          cursor: pointer;
+          font-weight: 500;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 0.375em;
+        }
+
+        label input {
+          position: absolute;
+          left: -9999px;
+        }
+
+        label input:checked + span {
+          background-color: var(--vscode-button-background);
+        }
+
+        label input:checked + span:before {
+          box-shadow: inset 0 0 0 0.4375em #00005c;
+        }
+
+        label span {
+          display: flex;
+          align-items: center;
+          padding: 0.375em 0.75em 0.375em 0.375em;
+          border-radius: 99em;
+          transition: 0.25s ease;
+        }
+
+        label span:hover {
+          background-color: var(--vscode-button-hoverBackground);
+        }
+
+        label span:before {
+          display: flex;
+          flex-shrink: 0;
+          content: "";
+          background-color: #fff;
+          width: 1.5em;
+          height: 1.5em;
+          border-radius: 50%;
+          margin-right: 0.375em;
+          transition: 0.25s ease;
+          box-shadow: inset 0 0 0 0.125em #00005c;
+        }
+
+        .submit-btn {
+          align-items: center;
+          appearance: button;
+          background-color: var(--vscode-focusBorder);
+          border-radius: 8px;
+          border-style: none;
+          box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+          box-sizing: border-box;
+          color: #fff;
+          cursor: pointer;
+          display: flex;
+          flex-direction: row;
+          flex-shrink: 0;
+          font-family: "Segoe UI", sans-serif;
+          font-size: 100%;
+          line-height: 1.15;
+          margin: 0;
+          padding: 10px 21px;
+          text-align: center;
+          text-transform: none;
+          transition:
+            color 0.13s ease-in-out,
+            background 0.13s ease-in-out,
+            opacity 0.13s ease-in-out,
+            box-shadow 0.13s ease-in-out;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: manipulation;
+        }
+
+        .filename-txt {
+          color: var(--vscode-editorLightBulb-foreground);
+        }
+
+        form { line-height: 20px; }
+      </style>
+    </head>
+    <body>
+      <h1>TPTP Process Solution Options</h1>
+      <p class="filename-txt">File: ${path.basename(doc.uri.fsPath)}</p>
+
+      <form id="optionsForm">
+        <label> <input type="radio" name="prover" value="AGInTRater---0.0"> <span>AGInTRater 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="AGMV---1.0"> <span>AGMV 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="BNFParser---0.0"> <span>BNFParser 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="BNFParserTree---0.0"> <span>BNFParserTree 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="GAPT---2.16.0"> <span>GAPT 2.16.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="GDV---1.0"> <span>GDV 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="GDV-LP---1.0"> <span>GDV-LP 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="IDV---1.0"> <span>IDV 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="IIV---0.0"> <span>IIV 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="InterpretByATP---0.0"> <span>InterpretByATP 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="ITV---0.0"> <span>ITV 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="PProofSummary---0.0"> <span>PProofSummary 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="ProofStats---1.0"> <span>ProofStats 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="ProofSummary---0.0"> <span>ProofSummary 0.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="SolutionStats---1.0"> <span>SolutionStats 1.0</span> <br> </label>
+        <label> <input type="radio" name="prover" value="TPTP2JSON---0.1"> <span>TPTP2JSON 0.1</span> <br> </label>
+        <label> <input type="radio" name="prover" value="TPTP4X---0.0"> <span>TPTP4X 0.0</span> <br> </label>
+        
+        <button class="submit-btn" type="submit">Prove</button>
+      </form>
+      <br><br><br><br>
+
+      <script>
+        const vscode = acquireVsCodeApi();
+
+        document.getElementById('optionsForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const proverInput = document.querySelector('input[type="radio"]:checked');
+          const prover = proverInput ? proverInput.value : null;
+
+          vscode.postMessage({
+            type: 'submit',
+            payload: { prover: prover }
+          });
+        });
+      </script>
+
+    </body>
+    </html>
+    `;
+        panel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'submit') {
+                const userData = message.payload;
+                // vscode.window.showInformationMessage(`You selected: ${userData.prover}`);
+                panel.dispose();
+                const form = new FormData();
+                form.append('TPTPProblem', '');
+                form.append('SystemAndVersion', '');
+                form.append('ProblemSource', 'FORMULAE');
+                form.append('FORMULAEProblem', content);
+                form.append('UPLOADProblem', '');
+                form.append('FormulaURL', '');
+                form.append('SolutionFormat', 'TPTP');
+                form.append('QuietFlag', '-q01');
+                form.append('SubmitButton', 'ProcessSolution');
+                form.append('TimeLimit___AGInTRater---0.0', '60');
+                form.append('Transform___AGInTRater---0.0', 'none');
+                form.append('Format___AGInTRater---0.0', 'tptp:raw');
+                form.append('Command___AGInTRater---0.0', 'AGInTRater -c %s');
+                form.append('TimeLimit___AGMV---1.0', '60');
+                form.append('Transform___AGMV---1.0', 'none');
+                form.append('Format___AGMV---1.0', 'tptp:raw');
+                form.append('Command___AGMV---1.0', 'run_AGMV %d %s');
+                form.append('TimeLimit___BNFParser---0.0', '60');
+                form.append('Transform___BNFParser---0.0', 'none');
+                form.append('Format___BNFParser---0.0', 'tptp:raw');
+                form.append('Command___BNFParser---0.0', 'BNFParser %s');
+                form.append('TimeLimit___BNFParserTree---0.0', '60');
+                form.append('Transform___BNFParserTree---0.0', 'none');
+                form.append('Format___BNFParserTree---0.0', 'tptp:raw');
+                form.append('Command___BNFParserTree---0.0', 'BNFParserTree %s');
+                form.append('TimeLimit___GAPT---2.16.0', '300');
+                form.append('Transform___GAPT---2.16.0', 'none');
+                form.append('Format___GAPT---2.16.0', 'tptp:raw');
+                form.append('Command___GAPT---2.16.0', 'load_tstp.sh -t %d %s');
+                form.append('TimeLimit___GDV---1.0', '300');
+                form.append('Transform___GDV---1.0', 'none');
+                form.append('Format___GDV---1.0', 'tptp:raw');
+                form.append('Command___GDV---1.0', 'run_GDV %s 30');
+                form.append('TimeLimit___GDV-LP---1.0', '300');
+                form.append('Transform___GDV-LP---1.0', 'none');
+                form.append('Format___GDV-LP---1.0', 'tptp:raw');
+                form.append('Command___GDV-LP---1.0', 'run_GDV %s 30 LP');
+                form.append(`System___${userData.prover}`, userData.prover);
+                form.append('TimeLimit___IDV---1.0', '60');
+                form.append('Transform___IDV---1.0', 'none');
+                form.append('Format___IDV---1.0', 'tptp');
+                form.append('Command___IDV---1.0', 'run_IDV %s');
+                form.append('TimeLimit___IIV---0.0', '60');
+                form.append('Transform___IIV---0.0', 'none');
+                form.append('Format___IIV---0.0', 'tptp:raw');
+                form.append('Command___IIV---0.0', 'run_IIV %s');
+                form.append('TimeLimit___InterpretByATP---0.0', '60');
+                form.append('Transform___InterpretByATP---0.0', 'none');
+                form.append('Format___InterpretByATP---0.0', 'tptp:raw');
+                form.append('Command___InterpretByATP---0.0', 'run_InterpretByATP %d %s');
+                form.append('TimeLimit___ITV---0.0', '60');
+                form.append('Transform___ITV---0.0', 'none');
+                form.append('Format___ITV---0.0', 'tptp:raw');
+                form.append('Command___ITV---0.0', 'run_ITV %s');
+                form.append('TimeLimit___PProofSummary---0.0', '60');
+                form.append('Transform___PProofSummary---0.0', 'none');
+                form.append('Format___PProofSummary---0.0', 'tptp:raw');
+                form.append('Command___PProofSummary---0.0', 'ProofSummary -f prolog %s');
+                form.append('TimeLimit___ProofStats---1.0', '60');
+                form.append('Transform___ProofStats---1.0', 'none');
+                form.append('Format___ProofStats---1.0', 'tptp:raw');
+                form.append('Command___ProofStats---1.0', 'run_MakeTreeStats %s');
+                form.append('TimeLimit___ProofSummary---0.0', '60');
+                form.append('Transform___ProofSummary---0.0', 'none');
+                form.append('Format___ProofSummary---0.0', 'tptp:raw');
+                form.append('Command___ProofSummary---0.0', 'ProofSummary -f tptp %s');
+                form.append('TimeLimit___SolutionStats---1.0', '60');
+                form.append('Transform___SolutionStats---1.0', 'none');
+                form.append('Format___SolutionStats---1.0', 'tptp:raw');
+                form.append('Command___SolutionStats---1.0', 'run_MakeTreeStats %s');
+                form.append('TimeLimit___TPTP2JSON---0.1', '60');
+                form.append('Transform___TPTP2JSON---0.1', 'none');
+                form.append('Format___TPTP2JSON---0.1', 'tptp:raw');
+                form.append('Command___TPTP2JSON---0.1', 'run_tptp2json %s');
+                form.append('TimeLimit___TPTP4X---0.0', '60');
+                form.append('Transform___TPTP4X---0.0', 'none');
+                form.append('Format___TPTP4X---0.0', 'tptp:raw');
+                form.append('Command___TPTP4X---0.0', 'tptp4X %s');
+                try {
+                    fetch("https://tptp.org/cgi-bin/SystemOnTPTPFormReply", {
+                        method: 'POST',
+                        body: form,
+                    })
+                        .then(response => response.text())
+                        .then(html => {
+                        const resultHtml = html;
+                        const resultPanel = vscode.window.createWebviewPanel('tptpResult', 'TPTP Processed Solution', vscode.ViewColumn.Two, { enableScripts: true });
+                        resultPanel.webview.html = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>TPTP Processed Solution</title>
+                <style>
+                  .collapsable button { background-color: var(--vscode-activityBar-border) } 
+                  h1 { text-decoration: underline; }
+                  h2 { color: var(--vscode-editorLightBulb-foreground); }
+                  pre { line-height: 20px; }
+                  body { margin: 20px !important; }
+                  span { background-color: var(--vscode-toolbar-hoverBackground); padding: 5px; border-radius: 10px; }
+                  button {
+                    align-items: center;
+                    appearance: button;
+                    background-color: var(--vscode-focusBorder);
+                    border-radius: 8px;
+                    border-style: none;
+                    box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+                    box-sizing: border-box;
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: row;
+                    flex-shrink: 0;
+                    font-family: "Segoe UI", sans-serif;
+                    font-size: 100%;
+                    line-height: 1.15;
+                    margin: 0;
+                    padding: 10px 13px;
+                    text-align: center;
+                    text-transform: none;
+                    transition:
+                      color 0.13s ease-in-out,
+                      background 0.13s ease-in-out,
+                      opacity 0.13s ease-in-out,
+                      box-shadow 0.13s ease-in-out;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    touch-action: manipulation;
+                  }
+                </style>
+              </head>
+              <body>
+                <h1>TPTP Processed Solution</h1>
+                <h2>System: <span>${userData.prover}</span></h2>
+
+                ${resultHtml.replace('Loading IDV ... ', '')}
+
+                <script>
+                  const vscode = acquireVsCodeApi();
+                  function downloadResult() {
+                    const content = document.querySelector('pre').innerText;
+                    vscode.postMessage({command: 'download', content: content});
+                  }
+                </script>
+              </body>
+              </html>
+            `;
+                    })
+                        .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+                }
+                catch (error) {
+                    vscode.window.showErrorMessage(`Error submitting to TPTP: ${error.message}`);
+                }
+            }
+        });
+    });
+    context.subscriptions.push(processSolution);
+    //@                                                                                  
+    //@ PROCESS SOLUTION (USING MULTIPLE PROCESSORS)                                     
+    const processSolutionMultiple = vscode.commands.registerCommand('tptp.processSolutionMultiple', async (uri) => {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        const content = doc.getText();
+        const panel = vscode.window.createWebviewPanel('customMenu', 'TPTP Process Solutions Options', vscode.ViewColumn.Two, { enableScripts: true } // allow JS
+        );
+        panel.webview.html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>TPTP Process Solutions Options</title>
+
+      <style>
+        .collapsable button { background-color: var(--vscode-activityBar-border) } 
+        body {
+          font-family: "Inter", sans-serif;
+        }
+
+        h1 { 
+          text-decoration: underline; 
+        }
+
+        label {
+          display: flex;
+          cursor: pointer;
+          font-weight: 500;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 0.375em;
+        }
+
+        label input {
+          position: absolute;
+          left: -9999px;
+        }
+
+        label input:checked + span {
+          background-color: var(--vscode-button-background);
+        }
+
+        label input:checked + span:before {
+          box-shadow: inset 0 0 0 0.4375em #00005c;
+        }
+
+        label span {
+          display: flex;
+          align-items: center;
+          padding: 0.375em 0.75em 0.375em 0.375em;
+          border-radius: 99em;
+          transition: 0.25s ease;
+        }
+
+        label span:hover {
+          background-color: var(--vscode-button-hoverBackground);
+        }
+
+        label span:before {
+          display: flex;
+          flex-shrink: 0;
+          content: "";
+          background-color: #fff;
+          width: 1.5em;
+          height: 1.5em;
+          border-radius: 50%;
+          margin-right: 0.375em;
+          transition: 0.25s ease;
+          box-shadow: inset 0 0 0 0.125em #00005c;
+        }
+
+        .submit-btn {
+          align-items: center;
+          appearance: button;
+          background-color: var(--vscode-focusBorder);
+          border-radius: 8px;
+          border-style: none;
+          box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+          box-sizing: border-box;
+          color: #fff;
+          cursor: pointer;
+          display: flex;
+          flex-direction: row;
+          flex-shrink: 0;
+          font-family: "Segoe UI", sans-serif;
+          font-size: 100%;
+          line-height: 1.15;
+          margin: 0;
+          padding: 10px 21px;
+          text-align: center;
+          text-transform: none;
+          transition:
+            color 0.13s ease-in-out,
+            background 0.13s ease-in-out,
+            opacity 0.13s ease-in-out,
+            box-shadow 0.13s ease-in-out;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: manipulation;
+        }
+
+        .filename-txt {
+          color: var(--vscode-editorLightBulb-foreground);
+        }
+
+        form { line-height: 20px; }
+      </style>
+    </head>
+    <body>
+      <h1>TPTP Process Solution Options</h1>
+      <p class="filename-txt">File: ${path.basename(doc.uri.fsPath)}</p>
+
+      <form id="optionsForm">
+        <label> <input type="checkbox" name="prover" value="AGInTRater---0.0"> <span>AGInTRater 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="AGMV---1.0"> <span>AGMV 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="BNFParser---0.0"> <span>BNFParser 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="BNFParserTree---0.0"> <span>BNFParserTree 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="GAPT---2.16.0"> <span>GAPT 2.16.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="GDV---1.0"> <span>GDV 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="GDV-LP---1.0"> <span>GDV-LP 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="IDV---1.0"> <span>IDV 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="IIV---0.0"> <span>IIV 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="InterpretByATP---0.0"> <span>InterpretByATP 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="ITV---0.0"> <span>ITV 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="PProofSummary---0.0"> <span>PProofSummary 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="ProofStats---1.0"> <span>ProofStats 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="ProofSummary---0.0"> <span>ProofSummary 0.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="SolutionStats---1.0"> <span>SolutionStats 1.0</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="TPTP2JSON---0.1"> <span>TPTP2JSON 0.1</span> <br> </label>
+        <label> <input type="checkbox" name="prover" value="TPTP4X---0.0"> <span>TPTP4X 0.0</span> <br> </label>
+        
+        <button class="submit-btn" type="submit">Prove</button>
+      </form>
+      <br><br><br><br>
+
+      <script>
+        const vscode = acquireVsCodeApi();
+
+        document.getElementById('optionsForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const proversInput = document.querySelectorAll('input[type="checkbox"]:checked');
+          const provers = proversInput ? Array.from(proversInput).map(inp => { return inp.value }) : null;
+
+          vscode.postMessage({
+            type: 'submit',
+            payload: { provers: provers }
+          });
+        });
+      </script>
+
+    </body>
+    </html>
+    `;
+        panel.webview.onDidReceiveMessage(async (message) => {
+            if (message.type === 'submit') {
+                const userData = message.payload;
+                // vscode.window.showInformationMessage(`You selected: ${userData.prover}`);
+                panel.dispose();
+                const form = new FormData();
+                form.append('TPTPProblem', '');
+                form.append('SystemAndVersion', '');
+                form.append('ProblemSource', 'FORMULAE');
+                form.append('FORMULAEProblem', content);
+                form.append('UPLOADProblem', '');
+                form.append('FormulaURL', '');
+                form.append('SolutionFormat', 'TPTP');
+                form.append('QuietFlag', '-q01');
+                form.append('SubmitButton', 'ProcessSolution');
+                form.append('TimeLimit___AGInTRater---0.0', '60');
+                form.append('Transform___AGInTRater---0.0', 'none');
+                form.append('Format___AGInTRater---0.0', 'tptp:raw');
+                form.append('Command___AGInTRater---0.0', 'AGInTRater -c %s');
+                form.append('TimeLimit___AGMV---1.0', '60');
+                form.append('Transform___AGMV---1.0', 'none');
+                form.append('Format___AGMV---1.0', 'tptp:raw');
+                form.append('Command___AGMV---1.0', 'run_AGMV %d %s');
+                form.append('TimeLimit___BNFParser---0.0', '60');
+                form.append('Transform___BNFParser---0.0', 'none');
+                form.append('Format___BNFParser---0.0', 'tptp:raw');
+                form.append('Command___BNFParser---0.0', 'BNFParser %s');
+                form.append('TimeLimit___BNFParserTree---0.0', '60');
+                form.append('Transform___BNFParserTree---0.0', 'none');
+                form.append('Format___BNFParserTree---0.0', 'tptp:raw');
+                form.append('Command___BNFParserTree---0.0', 'BNFParserTree %s');
+                form.append('TimeLimit___GAPT---2.16.0', '300');
+                form.append('Transform___GAPT---2.16.0', 'none');
+                form.append('Format___GAPT---2.16.0', 'tptp:raw');
+                form.append('Command___GAPT---2.16.0', 'load_tstp.sh -t %d %s');
+                form.append('TimeLimit___GDV---1.0', '300');
+                form.append('Transform___GDV---1.0', 'none');
+                form.append('Format___GDV---1.0', 'tptp:raw');
+                form.append('Command___GDV---1.0', 'run_GDV %s 30');
+                form.append('TimeLimit___GDV-LP---1.0', '300');
+                form.append('Transform___GDV-LP---1.0', 'none');
+                form.append('Format___GDV-LP---1.0', 'tptp:raw');
+                form.append('Command___GDV-LP---1.0', 'run_GDV %s 30 LP');
+                for (const prover of userData.provers) {
+                    form.append(`System___${prover}`, prover);
+                }
+                form.append('TimeLimit___IDV---1.0', '60');
+                form.append('Transform___IDV---1.0', 'none');
+                form.append('Format___IDV---1.0', 'tptp');
+                form.append('Command___IDV---1.0', 'run_IDV %s');
+                form.append('TimeLimit___IIV---0.0', '60');
+                form.append('Transform___IIV---0.0', 'none');
+                form.append('Format___IIV---0.0', 'tptp:raw');
+                form.append('Command___IIV---0.0', 'run_IIV %s');
+                form.append('TimeLimit___InterpretByATP---0.0', '60');
+                form.append('Transform___InterpretByATP---0.0', 'none');
+                form.append('Format___InterpretByATP---0.0', 'tptp:raw');
+                form.append('Command___InterpretByATP---0.0', 'run_InterpretByATP %d %s');
+                form.append('TimeLimit___ITV---0.0', '60');
+                form.append('Transform___ITV---0.0', 'none');
+                form.append('Format___ITV---0.0', 'tptp:raw');
+                form.append('Command___ITV---0.0', 'run_ITV %s');
+                form.append('TimeLimit___PProofSummary---0.0', '60');
+                form.append('Transform___PProofSummary---0.0', 'none');
+                form.append('Format___PProofSummary---0.0', 'tptp:raw');
+                form.append('Command___PProofSummary---0.0', 'ProofSummary -f prolog %s');
+                form.append('TimeLimit___ProofStats---1.0', '60');
+                form.append('Transform___ProofStats---1.0', 'none');
+                form.append('Format___ProofStats---1.0', 'tptp:raw');
+                form.append('Command___ProofStats---1.0', 'run_MakeTreeStats %s');
+                form.append('TimeLimit___ProofSummary---0.0', '60');
+                form.append('Transform___ProofSummary---0.0', 'none');
+                form.append('Format___ProofSummary---0.0', 'tptp:raw');
+                form.append('Command___ProofSummary---0.0', 'ProofSummary -f tptp %s');
+                form.append('TimeLimit___SolutionStats---1.0', '60');
+                form.append('Transform___SolutionStats---1.0', 'none');
+                form.append('Format___SolutionStats---1.0', 'tptp:raw');
+                form.append('Command___SolutionStats---1.0', 'run_MakeTreeStats %s');
+                form.append('TimeLimit___TPTP2JSON---0.1', '60');
+                form.append('Transform___TPTP2JSON---0.1', 'none');
+                form.append('Format___TPTP2JSON---0.1', 'tptp:raw');
+                form.append('Command___TPTP2JSON---0.1', 'run_tptp2json %s');
+                form.append('TimeLimit___TPTP4X---0.0', '60');
+                form.append('Transform___TPTP4X---0.0', 'none');
+                form.append('Format___TPTP4X---0.0', 'tptp:raw');
+                form.append('Command___TPTP4X---0.0', 'tptp4X %s');
+                try {
+                    fetch("https://tptp.org/cgi-bin/SystemOnTPTPFormReply", {
+                        method: 'POST',
+                        body: form,
+                    })
+                        .then(response => response.text())
+                        .then(html => {
+                        const resultHtml = html;
+                        const resultPanel = vscode.window.createWebviewPanel('tptpResult', 'TPTP Processed Solution', vscode.ViewColumn.Two, { enableScripts: true });
+                        resultPanel.webview.html = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>TPTP Processed Solution</title>
+                <style>
+                  .collapsable button { background-color: var(--vscode-activityBar-border) } 
+                  h1 { text-decoration: underline; }
+                  h2 { color: var(--vscode-editorLightBulb-foreground); }
+                  pre { line-height: 20px; }
+                  body { margin: 20px !important; }
+                  span { background-color: var(--vscode-toolbar-hoverBackground); padding: 5px; border-radius: 10px; }
+                  button {
+                    align-items: center;
+                    appearance: button;
+                    background-color: var(--vscode-focusBorder);
+                    border-radius: 8px;
+                    border-style: none;
+                    box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+                    box-sizing: border-box;
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: row;
+                    flex-shrink: 0;
+                    font-family: "Segoe UI", sans-serif;
+                    font-size: 100%;
+                    line-height: 1.15;
+                    margin: 0;
+                    padding: 10px 13px;
+                    text-align: center;
+                    text-transform: none;
+                    transition:
+                      color 0.13s ease-in-out,
+                      background 0.13s ease-in-out,
+                      opacity 0.13s ease-in-out,
+                      box-shadow 0.13s ease-in-out;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    touch-action: manipulation;
+                  }
+                </style>
+              </head>
+              <body>
+                <h1>TPTP Processed Solution</h1>
+                <h2>System: <span>${userData.provers.join(", ")}</span></h2>
+
+                ${resultHtml.replace('Loading IDV ... ', '')}
+
+                <script>
+                  const vscode = acquireVsCodeApi();
+                  function downloadResult() {
+                    const content = document.querySelector('pre').innerText;
+                    vscode.postMessage({command: 'download', content: content});
+                  }
+                </script>
+              </body>
+              </html>
+            `;
+                    })
+                        .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+                }
+                catch (error) {
+                    vscode.window.showErrorMessage(`Error submitting to TPTP: ${error.message}`);
+                }
+            }
+        });
+    });
+    context.subscriptions.push(processSolution);
+    //@                                                                                  
+    //@ IMPORT PROBLEM                                                                   
+    const importProblem = vscode.commands.registerCommand('tptp.importProblem', async () => {
+        const category = await vscode.window.showQuickPick(['AGT', 'ALG', 'ANA', 'ARI', 'BIO', 'BOO', 'CAT', 'COL', 'COM', 'CSR', 'DAT', 'FLD', 'GEG', 'GEO', 'GRA', 'GRP', 'HAL', 'HEN', 'HWC', 'HWV', 'ITP', 'KLE', 'KRS', 'LAT', 'LCL', 'LDA', 'LIN', 'MED', 'MGT', 'MSC', 'MVA', 'NLP', 'NUM', 'NUN', 'PHI', 'PLA', 'PRD', 'PRO', 'PUZ', 'QUA', 'RAL', 'REL', 'RNG', 'ROB', 'SCT', 'SET', 'SEU', 'SEV', 'SWB', 'SWC', 'SWV', 'SWW', 'SYN', 'SYO', 'TOP'], { placeHolder: "Select a category for the problem" });
+        const response = await fetch(`https://tptp.org/cgi-bin/SeeTPTP?Category=Problems&Domain=${category}`);
+        const html = await response.text();
+        const matches = [...html.matchAll(/<tt>(.*?)<\/tt>/g)];
+        const options = matches.map(match => match[1].trim());
+        const selectedProblem = await vscode.window.showQuickPick(options, { placeHolder: "Select a problem to import" });
+        if (selectedProblem) {
+            const problemUrl = `https://tptp.org/cgi-bin/SeeTPTP?Category=Problems&Domain=${category}&File=${encodeURIComponent(selectedProblem)}`;
+            const problemResponse = await fetch(problemUrl);
+            const problemHTML = await problemResponse.text();
+            const match = problemHTML.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+            const problemText = match ? match[1].replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, '') : '% No problem found';
+            const doc = await vscode.workspace.openTextDocument({ language: 'tptp', content: problemText });
+            await vscode.window.showTextDocument(doc);
+            // save the problem to a file in the workspace?
+            // const folder = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+            // if (!folder) {
+            //   vscode.window.showErrorMessage('Please open a workspace folder before importing the problem.');
+            //   return;
+            // }
+            // const fullPath = path.join(folder, `Problem_${selectedProblem}.p`);
+            // const fileUri = vscode.Uri.file(fullPath);
+            // await vscode.workspace.fs.writeFile(fileUri, Buffer.from(problemText, 'utf8'));
+            // const doc = await vscode.workspace.openTextDocument(fileUri);
+            // await vscode.window.showTextDocument(doc);
+        }
+        else {
+            vscode.window.showInformationMessage('No problem selected.');
+        }
+    });
+    context.subscriptions.push(importProblem);
+    //@                                                                                  
+    //@ IMPORT SOLUTION                                                                  
+    const importSolution = vscode.commands.registerCommand('tptp.importSolution', async () => {
+        const category = await vscode.window.showQuickPick(['AGT', 'ALG', 'ANA', 'ARI', 'BIO', 'BOO', 'CAT', 'COL', 'COM', 'CSR', 'DAT', 'FLD', 'GEG', 'GEO', 'GRA', 'GRP', 'HAL', 'HEN', 'HWC', 'HWV', 'ITP', 'KLE', 'KRS', 'LAT', 'LCL', 'LDA', 'LIN', 'MED', 'MGT', 'MSC', 'MVA', 'NLP', 'NUM', 'NUN', 'PHI', 'PLA', 'PRD', 'PRO', 'PUZ', 'QUA', 'RAL', 'REL', 'RNG', 'ROB', 'SCT', 'SET', 'SEU', 'SEV', 'SWB', 'SWC', 'SWV', 'SWW', 'SWX', 'SYN', 'SYO', 'TOP'], { placeHolder: "Select a category for the solution" });
+        let response = await fetch(`https://tptp.org/cgi-bin/SeeTPTP?Category=Solutions&Domain=${category}`);
+        let html = await response.text();
+        let matches = [...html.matchAll(/<tt>(.*?)<\/tt>/g)];
+        let options = matches.map(match => match[1].trim());
+        const selectedSolution = await vscode.window.showQuickPick(options, { placeHolder: "Select a Solution to import" });
+        response = await fetch(`https://tptp.org/cgi-bin/SeeTPTP?Category=Solutions&Domain=${category}&File=${selectedSolution}`);
+        html = await response.text();
+        console.log("HTML Content:", html);
+        const dom = new jsdom_1.JSDOM(html);
+        const document = dom.window.document;
+        let anchors = Array.from(document.querySelectorAll("tbody > tr > td > a"))
+            .map(a => a.getAttribute("href")?.split("System=")[1])
+            .filter((s) => typeof s === "string");
+        console.log("Anchors:", anchors);
+        const selectedSolutionProver = await vscode.window.showQuickPick(anchors, { placeHolder: "Select a Solution to import from specified prover" }) || '';
+        if (selectedSolution) {
+            const SolutionUrl = `https://tptp.org/cgi-bin/SeeTPTP?Category=Solutions&Domain=${category}&File=${selectedSolution}&System=${selectedSolutionProver}`;
+            const SolutionResponse = await fetch(SolutionUrl);
+            const SolutionHTML = await SolutionResponse.text();
+            const match = SolutionHTML.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+            const SolutionText = match ? match[1].replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, '') : '% No Solution found';
+            const doc = await vscode.workspace.openTextDocument({ language: 'tptp', content: SolutionText });
+            await vscode.window.showTextDocument(doc);
+        }
+        else {
+            vscode.window.showInformationMessage('No Solution selected.');
+        }
+    });
+    context.subscriptions.push(importSolution);
+    //@                                                                                  
+    //@ FORMAT DOCUMENT
     let disposable = vscode.commands.registerCommand("tptp.formatDocument", () => {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === "tptp") {
@@ -1313,6 +2133,7 @@ function activate(context) {
         }
     });
     context.subscriptions.push(disposable);
+    //@                                                                                  
     // Server is implemented in TypeScript and runs in a separate process
     const serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
     // Debug options for the server
