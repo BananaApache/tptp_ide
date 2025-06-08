@@ -13,7 +13,7 @@ Designed for researchers, students, and logic developers. TPTP Editor enhances p
 
 ### - TPTP Language Features 
 
-<img src="./images/sample1.png" alt="sample image1" width="500"><br>
+<img src="./tptplus/images/sample1.png" alt="sample image1" width="500"><br>
 
 - Syntax highlighting for `.p` and `.s` files
 - Support for:
@@ -45,15 +45,15 @@ Designed for researchers, students, and logic developers. TPTP Editor enhances p
 - Displays the raw and formatted problem & solution returned from the prover inside a dedicated Webview
 - **All syntax highlighting, Webview styling, and UI accents automatically adjust to the active VS Code color theme, ensuring visual consistency and accessibility across light, dark, and high-contrast themes.**
 
-<img src="./images/sample2.png" alt="sample image2" width="400"><br>
+<img src="./tptplus/images/sample2.png" alt="sample image2" width="400"><br>
 
 <br>
 
 - `TPTP: Prove Problem`
 - Submit the currently open TPTP problem file to a selected theorem prover for evaluation and view results in a rich Webview interface.
 
-<img src="./images/sample4.png" alt="sample image4" width="200"><br>
-<img src="./images/sample5.png" alt="sample image5" width="400"><br>
+<img src="./tptplus/images/sample4.png" alt="sample image4" width="200"><br>
+<img src="./tptplus/images/sample5.png" alt="sample image5" width="400"><br>
 
 <br>
 
@@ -67,7 +67,7 @@ Designed for researchers, students, and logic developers. TPTP Editor enhances p
 
 <br>
 
-<img src="./images/sample3.png" alt="sample image3" width="400"><br>
+<img src="./tptplus/images/sample3.png" alt="sample image3" width="400"><br>
 
 <br>
 
