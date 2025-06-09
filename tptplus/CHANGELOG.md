@@ -12,5 +12,7 @@
 - v0.0.6 Implemented problem prover inside editor context menu.
 - v0.0.7 Added continute to option for TPTP Format and IDV Image.
 - v0.0.8 Added solving for problems using multiple provers.
-- v0.0.9 Added processing solutions using multiple provers. Added importing problems and solutions.
+- v0.0.9 Added processing solutions using multiple provers. 
 - v0.1.0 Refined README and fixed image paths.
+- v0.1.1 Added importing problems and solutions.
+- v0.1.2 Edited description in package.json.

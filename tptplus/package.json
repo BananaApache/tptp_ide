@@ -2,8 +2,8 @@
   "name": "tptpeditor",
   "displayName": "TPTP Editor",
   "publisher": "DE",
-  "description": "Syntax highlighting and error detection for TPTP language",
-  "version": "0.1.0",
+  "description": "Syntax highlighting, error detection, pretty-printing, and proving & processing theorems functions for TPTP language",
+  "version": "0.1.2",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
@@ -28,8 +28,8 @@
         "extensions": [".p", ".s"],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./icons/TPTPWorld.svg",
-          "dark": "./icons/TPTPWorld.svg"
+          "light": "./images/TPTPWorld.svg",
+          "dark": "./images/TPTPWorld.svg"
         }
       }
     ],

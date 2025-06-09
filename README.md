@@ -1,6 +1,3 @@
-
-# TPTP IDE
-
 # TPTP Editor
 
 TPTP Editor is a Visual Studio Code extension that provides a streamlined development environment for working with the TPTP language — a standard format used extensively in automated theorem proving and formal logic research. 
@@ -111,15 +108,20 @@ Implemented problem prover inside editor context menu.
 
 ### 0.0.7
 
-Added continute to option for TPTP Format and IDV Image
+Added continute to option for TPTP Format and IDV Image.
 
 ### 0.0.8 
 
-Added solving for problems using multiple provers
+Added solving for problems using multiple provers.
 
 ### 0.0.9
 
-Added processing solutions using multiple provers. Added importing problems and solutions
+Added processing solutions using multiple provers. Added importing problems and solutions.
+
+### 0.1.0
+
+Refined readme and fixed image path.
+
 ---
 
 ## For TPTP Language
@@ -140,20 +142,3 @@ The TPTP format is widely used in logic and automated reasoning. Learn more at [
 ---
 
 **Enjoy using TPTP Editor!**
-
-
-## VSCode Extension
-
-> Copy the whole directory into the vscode extensions path
-
-```
-cp -r tptp_ide ~/.vscode/extensions
-```
-
-## Using Yeoman and Code Generator
-
-> Developed with Yeoman
-
-## Published Extension on Marketplace
-
-> https://marketplace.visualstudio.com/items?itemName=DE.tptpeditor

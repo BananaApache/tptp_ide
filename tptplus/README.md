@@ -82,45 +82,7 @@ This extension does not contribute any custom settings.
 
 ## Release Notes
 
-### 0.0.1
-
-Initial release with base syntax support for TPTP problem files.
-
-### 0.0.2
-
-Updated logo and extension image. Changed README.
-
-### 0.0.3
-
-Added Change Log. Removed Known Issues.
-
-### 0.0.4
-
-Implemented Multiline reading. Added file icon.
-
-### 0.0.5
-
-Added pretty-printing. Fixed newline issue.
-
-### 0.0.6
-
-Implemented problem prover inside editor context menu. 
-
-### 0.0.7
-
-Added continute to option for TPTP Format and IDV Image.
-
-### 0.0.8 
-
-Added solving for problems using multiple provers.
-
-### 0.0.9
-
-Added processing solutions using multiple provers. Added importing problems and solutions.
-
-### 0.1.0
-
-Refined readme and fixed image path.
+See Release Notes [here](https://github.com/BananaApache/tptp_ide/blob/master/tptplus/CHANGELOG.md).
 
 ---
 
