@@ -10,8 +10,7 @@
     "url": "https://github.com/BananaApache/tptp_ide"
   },
   "activationEvents": [
-    "onStartupFinished",
-    "onLanguage:tptp"
+    "onStartupFinished"
   ],
   "engines": {
     "vscode": "^1.100.0"
