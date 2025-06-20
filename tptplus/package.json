@@ -3,7 +3,7 @@
   "displayName": "TPTP Editor",
   "publisher": "DE",
   "description": "Syntax highlighting, error detection, pretty-printing, and proving & processing theorems functions for TPTP language",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "icon": "images/TPTPWorld.png",
   "repository": {
     "type": "git",
@@ -43,6 +43,10 @@
         "title": "TPTP: Format Document"
       },
       {
+        "command": "tptp.prepareProblem",
+        "title": "TPTP: Format TPTP File"
+      },
+      {
         "command": "tptp.proveProblem",
         "title": "TPTP: Prove Problem"
       },
@@ -76,6 +80,11 @@
         }
       ],
       "editor/context": [
+        {
+          "command": "tptp.prepareProblem",
+          "when": "editorLangId == tptp",
+          "group": "navigation"
+        },
         {
           "command": "tptp.proveProblem",
           "when": "resourceExtname == .p",
