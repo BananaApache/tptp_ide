@@ -8,8 +8,7 @@ cnf(charles,hypothesis,
     lives(charles) ).
 
 cnf(poorer_killer,hypothesis,
-    ( ~ killed(X,Y)
-    | ~ richer(X,Y) ) ).
+    ( ~ killed(X,Y) | ~ richer(X,Y) ) ).
 
 cnf(different_hates,hypothesis,
     ( ~ hates(agatha,X)

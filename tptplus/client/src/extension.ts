@@ -15,8 +15,433 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
 
-  //@ PREPARE A PROBLEM THROUGH SYSTEMB4TPTP
+  //@ PREPARE PROBLEM THROUGH SYSTEMB4TPTP
   const prepareProblem = vscode.commands.registerCommand('tptp.prepareProblem', async (uri: vscode.Uri) => {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const content = doc.getText();
+
+    const panel = vscode.window.createWebviewPanel(
+      'customMenu',
+      'TPTP Options',
+      vscode.ViewColumn.Two,
+      { enableScripts: true }  // allow JS
+    );
+
+    panel.webview.html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>TPTP Prover Options</title>
+        <style>
+          .collapsable button { background-color: var(--vscode-activityBar-border) } 
+          body {
+            font-family: "Inter", sans-serif;
+          }
+
+          h1 { 
+            text-decoration: underline; 
+          }
+
+          label {
+            display: flex;
+            cursor: pointer;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0.375em;
+          }
+
+          label input {
+            position: absolute;
+            left: -9999px;
+          }
+
+          label input:checked + span {
+            background-color: var(--vscode-button-background);
+          }
+
+          label input:checked + span:before {
+            box-shadow: inset 0 0 0 0.4375em #00005c;
+          }
+
+          label span {
+            display: flex;
+            align-items: center;
+            padding: 0.375em 0.75em 0.375em 0.375em;
+            border-radius: 99em;
+            transition: 0.25s ease;
+          }
+
+          label span:hover {
+            background-color: var(--vscode-button-hoverBackground);
+          }
+
+          label span:before {
+            display: flex;
+            flex-shrink: 0;
+            content: "";
+            background-color: #fff;
+            width: 1.5em;
+            height: 1.5em;
+            border-radius: 50%;
+            margin-right: 0.375em;
+            transition: 0.25s ease;
+            box-shadow: inset 0 0 0 0.125em #00005c;
+          }
+
+          .submit-btn {
+            align-items: center;
+            appearance: button;
+            background-color: var(--vscode-focusBorder);
+            border-radius: 8px;
+            border-style: none;
+            box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+            box-sizing: border-box;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: row;
+            flex-shrink: 0;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 100%;
+            line-height: 1.15;
+            margin: 0;
+            padding: 10px 21px;
+            text-align: center;
+            text-transform: none;
+            transition:
+              color 0.13s ease-in-out,
+              background 0.13s ease-in-out,
+              opacity 0.13s ease-in-out,
+              box-shadow 0.13s ease-in-out;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+          }
+
+          .filename-txt {
+            color: var(--vscode-editorLightBulb-foreground);
+          }
+
+          form { line-height: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Run TPTP Prover</h1>
+        <p class="filename-txt">File: ${path.basename(doc.uri.fsPath)}</p>
+
+        <form id="optionForm">
+          <h2>Select a Prover</h2>
+          <label> <input type="radio" name="prover" value="AddTypes---1.2.4"> <span>AddTypes 1.2.4</span> <br> </label>
+          <label> <input type="radio" name="prover" value="ASk---0.2.3"> <span>ASk 0.2.3</span> <br> </label>
+          <label> <input type="radio" name="prover" value="BNFParser---0.0"> <span>BNFParser 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="BNFParserTree---0.0"> <span>BNFParserTree 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="BNFParserDrill---0.0"> <span>BNFParserDrill 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="CheckTyping---0.0"> <span>CheckTyping 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="ECNF---3.2.5"> <span>ECNF 3.2.5</span> <br> </label>
+          <label> <input type="radio" name="prover" value="EGround---3.2.5"> <span>EGround 3.2.5</span> <br> </label>
+          <label> <input type="radio" name="prover" value="ESelect---3.2.5"> <span>ESelect 3.2.5</span> <br> </label>
+          <label> <input type="radio" name="prover" value="GetSymbols---0.0"> <span>GetSymbols 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Isabelle---2TH0"> <span>Isabelle 2TH0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Horn2UEQ---0.4.1"> <span>Horn2UEQ 0.4.1</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Isabelle---2TF0"> <span>Isabelle 2TF0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Isabelle---2FOF"> <span>Isabelle 2FOF</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Leo-III-STC---1.7.19"> <span>Leo-III-STC 1.7.19</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Monotonox---0.4.1"> <span>Monotonox 0.4.1</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Monotonox-2FOF---0.4.1"> <span>Monotonox-2FOF 0.4.1</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Monotonox-2CNF---0.4.1"> <span>Monotonox-2CNF 0.4.1</span> <br> </label>
+          <label> <input type="radio" name="prover" value="NTFLET---1.8.5"> <span>NTFLET 1.8.5</span> <br> </label>
+          <label> <input type="radio" name="prover" value="ProblemStats---1.0"> <span>ProblemStats 1.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Prophet---0.0"> <span>Prophet 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Saffron---4.5"> <span>Saffron 4.5</span> <br> </label>
+          <label> <input type="radio" name="prover" value="SPCForProblem---1.0"> <span>SPCForProblem 1.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="TPII---0.0"> <span>TPII 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="TPTP2X---0.0"> <span>TPTP2X 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="TPTP4X---0.0"> <span>TPTP4X 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="TPTP2JSON---0.1"> <span>TPTP2JSON 0.1</span> <br> </label>
+          <label> <input type="radio" name="prover" value="TwHelFTC---0.0"> <span>TwHelFTC 0.0</span> <br> </label>
+          <label> <input type="radio" name="prover" value="VCNF---4.8"> <span>VCNF 4.8</span> <br> </label>
+          <label> <input type="radio" name="prover" value="VSelect---4.4"> <span>VSelect 4.4</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Why3-FOF---0.85"> <span>Why3-FOF 0.85</span> <br> </label>
+          <label> <input type="radio" name="prover" value="Why3-TF0---0.85"> <span>Why3-TF0 0.85</span> <br> </label>
+          <br>
+
+          <h2>Continue to</h2>
+          <label> <input type="radio" name="continueOption" value="normal_output"> <span>Normal Output</span> <br> </label>
+          <label> <input type="radio" name="continueOption" value="replace_file"> <span>Replace Current File</span> <br> </label>
+          <br>
+
+          <button class="submit-btn" type="submit">Prove</button>
+          </form>
+        <br><br><br><br>
+
+        <script>
+          const vscode = acquireVsCodeApi();
+
+          document.getElementById('optionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const proverInput = document.querySelector('input[type="radio"]:checked');
+            const prover = proverInput ? proverInput.value : null;
+
+            const continueOptionInput = document.querySelector('input[name="continueOption"]:checked');
+            const continueOption = continueOptionInput ? continueOptionInput.value : 'normal_output';
+
+            vscode.postMessage({
+              type: 'submit',
+              payload: { prover: prover , continueOption: continueOption }
+            });
+          });
+        </script>
+      </body>
+      </html>
+    `;
+
+    panel.webview.onDidReceiveMessage(async (message) => {
+      if (message.type === 'submit') {
+        const userData = message.payload;
+        // vscode.window.showInformationMessage(`You selected: ${userData.prover}`);
+        // vscode.window.showInformationMessage(`You selected: ${userData.continueOption}`);
+        panel.dispose();
+
+        const form = new FormData();
+        form.append('TPTPProblem', '');
+        form.append('ProblemSource', 'FORMULAE');
+        form.append('FORMULAEProblem', content);
+        form.append('UPLOADProblem', '');
+        form.append('FormulaURL', '');
+        form.append('InputFormat', 'TPTP');
+        form.append('QuietFlag', '-q01');
+        form.append(`System___${userData.prover}`, userData.prover);
+        form.append('SubmitButton', 'ProcessProblem');
+        form.append('TimeLimit___AddTypes---1.2.4', '60');
+        form.append('Transform___AddTypes---1.2.4', 'none');
+        form.append('Format___AddTypes---1.2.4', 'tptp:raw');
+        form.append('Command___AddTypes---1.2.4', 'run_addtypes %s');
+        form.append('TimeLimit___ASk---0.2.3', '60');
+        form.append('Transform___ASk---0.2.3', 'none');
+        form.append('Format___ASk---0.2.3', 'tptp:raw');
+        form.append('Command___ASk---0.2.3', 'run_ASk %s');
+        form.append('TimeLimit___BNFParser---0.0', '60');
+        form.append('Transform___BNFParser---0.0', 'none');
+        form.append('Format___BNFParser---0.0', 'tptp:raw');
+        form.append('Command___BNFParser---0.0', 'BNFParser %s');
+        form.append('TimeLimit___BNFParserTree---0.0', '60');
+        form.append('Transform___BNFParserTree---0.0', 'none');
+        form.append('Format___BNFParserTree---0.0', 'tptp:raw');
+        form.append('Command___BNFParserTree---0.0', 'BNFParserTree %s');
+        form.append('TimeLimit___CheckTyping---0.0', '60');
+        form.append('Transform___CheckTyping---0.0', 'none');
+        form.append('Format___CheckTyping---0.0', 'tptp:raw');
+        form.append('Command___CheckTyping---0.0', 'CheckTyping -all %s');
+        form.append('TimeLimit___ECNF---3.2.5', '60');
+        form.append('Transform___ECNF---3.2.5', 'none');
+        form.append('Format___ECNF---3.2.5', 'tptp:raw');
+        form.append('Command___ECNF---3.2.5', 'run_ECNF %d %s');
+        form.append('TimeLimit___EGround---3.2.5', '60');
+        form.append('Transform___EGround---3.2.5', 'add_equality');
+        form.append('Format___EGround---3.2.5', 'tptp:raw');
+        form.append('Command___EGround---3.2.5', 'eground --tstp-in --tstp-out --silent --resources-info --split-tries=100 --memory-limit=200 --soft-cpu-limit=%d --add-one-instance --constraints %s');
+        form.append('TimeLimit___ESelect---3.2.5', '60');
+        form.append('Transform___ESelect---3.2.5', 'none');
+        form.append('Format___ESelect---3.2.5', 'tptp:raw');
+        form.append('Command___ESelect---3.2.5', 'eprover --sine=Auto --prune %s');
+        form.append('TimeLimit___GetSymbols---0.0', '60');
+        form.append('Transform___GetSymbols---0.0', 'none');
+        form.append('Format___GetSymbols---0.0', 'tptp:raw');
+        form.append('Command___GetSymbols---0.0', 'GetSymbols -all %s');
+        form.append('TimeLimit___Horn2UEQ---0.4.1', '60');
+        form.append('Transform___Horn2UEQ---0.4.1', 'none');
+        form.append('Format___Horn2UEQ---0.4.1', 'tptp:raw');
+        form.append('Command___Horn2UEQ---0.4.1', 'jukebox_horn2ueq %s');
+        form.append('TimeLimit___Isabelle---2FOF', '60');
+        form.append('Transform___Isabelle---2FOF', 'none');
+        form.append('Format___Isabelle---2FOF', 'tptp');
+        form.append('Command___Isabelle---2FOF', 'run_isabelle_2X FOF %s');
+        form.append('TimeLimit___Isabelle---2TF0', '60');
+        form.append('Transform___Isabelle---2TF0', 'none');
+        form.append('Format___Isabelle---2TF0', 'tptp');
+        form.append('Command___Isabelle---2TF0', 'run_isabelle_2X TF0 %s');
+        form.append('TimeLimit___Isabelle---2TH0', '60');
+        form.append('Transform___Isabelle---2TH0', 'none');
+        form.append('Format___Isabelle---2TH0', 'tptp');
+        form.append('Command___Isabelle---2TH0', 'run_isabelle_2X TH0 %s');
+        form.append('TimeLimit___Leo-III-STC---1.7.18', '60');
+        form.append('Transform___Leo-III-STC---1.7.18', 'none');
+        form.append('Format___Leo-III-STC---1.7.18', 'tptp:raw');
+        form.append('Command___Leo-III-STC---1.7.18', 'run_Leo-III %s %d STC');
+        form.append('TimeLimit___Monotonox---0.4.1', '60');
+        form.append('Transform___Monotonox---0.4.1', 'none');
+        form.append('Format___Monotonox---0.4.1', 'tptp:raw');
+        form.append('Command___Monotonox---0.4.1', 'jukebox monotonox %s');
+        form.append('TimeLimit___Monotonox-2CNF---0.4.1', '60');
+        form.append('Transform___Monotonox-2CNF---0.4.1', 'none');
+        form.append('Format___Monotonox-2CNF---0.4.1', 'tptp:raw');
+        form.append('Command___Monotonox-2CNF---0.4.1', 'jukebox_cnf %s');
+        form.append('TimeLimit___Monotonox-2FOF---0.4.1', '60');
+        form.append('Transform___Monotonox-2FOF---0.4.1', 'none');
+        form.append('Format___Monotonox-2FOF---0.4.1', 'tptp:raw');
+        form.append('Command___Monotonox-2FOF---0.4.1', 'jukebox_fof %s');
+        form.append('TimeLimit___NTFLET---1.8.5', '60');
+        form.append('Transform___NTFLET---1.8.5', 'none');
+        form.append('Format___NTFLET---1.8.5', 'tptp:raw');
+        form.append('Command___NTFLET---1.8.5', 'run_embed %s');
+        form.append('TimeLimit___ProblemStats---1.0', '60');
+        form.append('Transform___ProblemStats---1.0', 'none');
+        form.append('Format___ProblemStats---1.0', 'tptp:raw');
+        form.append('Command___ProblemStats---1.0', 'run_MakeListStats %s');
+        form.append('TimeLimit___Prophet---0.0', '60');
+        form.append('Transform___Prophet---0.0', 'none');
+        form.append('Format___Prophet---0.0', 'tptp');
+        form.append('Command___Prophet---0.0', 'prophet %s');
+        form.append('TimeLimit___Saffron---4.5', '60');
+        form.append('Transform___Saffron---4.5', 'none');
+        form.append('Format___Saffron---4.5', 'tptp:raw');
+        form.append('Command___Saffron---4.5', 'run_saffron %s %d');
+        form.append('TimeLimit___SPCForProblem---1.0', '60');
+        form.append('Transform___SPCForProblem---1.0', 'none');
+        form.append('Format___SPCForProblem---1.0', 'tptp:raw');
+        form.append('Command___SPCForProblem---1.0', 'run_SPCForProblem %s');
+        form.append('TimeLimit___TPII---0.0', '60');
+        form.append('Transform___TPII---0.0', 'none');
+        form.append('Format___TPII---0.0', 'tptp:raw');
+        form.append('Command___TPII---0.0', 'TPII %s');
+        form.append('TimeLimit___TPTP2JSON---0.1', '60');
+        form.append('Transform___TPTP2JSON---0.1', 'none');
+        form.append('Format___TPTP2JSON---0.1', 'tptp:raw');
+        form.append('Command___TPTP2JSON---0.1', 'run_tptp2json %s');
+        form.append('TimeLimit___TPTP2X---0.0', '60');
+        form.append('Transform___TPTP2X---0.0', 'none');
+        form.append('Format___TPTP2X---0.0', 'tptp:raw');
+        form.append('Command___TPTP2X---0.0', 'tptp2X -q2 -d- %s');
+        form.append('TimeLimit___TPTP4X---0.0', '60');
+        form.append('Transform___TPTP4X---0.0', 'none');
+        form.append('Format___TPTP4X---0.0', 'tptp:raw');
+        form.append('Command___TPTP4X---0.0', 'tptp4X %s');
+        form.append('TimeLimit___VCNF---4.8', '60');
+        form.append('Transform___VCNF---4.8', 'none');
+        form.append('Format___VCNF---4.8', 'tptp:raw');
+        form.append('Command___VCNF---4.8', 'run_vclausify_rel %s %d');
+        form.append('TimeLimit___VSelect---4.4', '60');
+        form.append('Transform___VSelect---4.4', 'none');
+        form.append('Format___VSelect---4.4', 'tptp:raw');
+        form.append('Command___VSelect---4.4', 'run_sine_select %s');
+        form.append('TimeLimit___Why3-FOF---0.85', '60');
+        form.append('Transform___Why3-FOF---0.85', 'none');
+        form.append('Format___Why3-FOF---0.85', 'tptp:raw');
+        form.append('Command___Why3-FOF---0.85', 'bin/why3 prove -F tptp -C /home/tptp/Systems/Why3---0.85/why3.conf -D /home/tptp/Systems/Why3---0.85/Source/drivers/tptp.gen %s');
+        form.append('TimeLimit___Why3-TF0---0.85', '60');
+        form.append('Transform___Why3-TF0---0.85', 'none');
+        form.append('Format___Why3-TF0---0.85', 'tptp:raw');
+        form.append('Command___Why3-TF0---0.85', 'bin/why3 prove -F tptp -C /home/tptp/Systems/Why3---0.85/why3.conf -D /home/tptp/Systems/Why3---0.85/Source/drivers/tptp-tff0.drv %s');
+
+        if (userData.continueOption === 'replace_file') {
+          const response = await fetch('https://tptp.org/cgi-bin/SystemOnTPTPFormReply', {
+            method: 'POST',
+            body: form
+          });
+          const text = await response.text();
+          const match = text.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+  
+          const editor = vscode.window.activeTextEditor;
+  
+          if (editor) {
+            const document = editor.document;
+  
+            const fullTextRange = new vscode.Range(
+              document.positionAt(0),
+              document.positionAt(document.getText().length)
+            );
+  
+            let output = document.getText(fullTextRange);
+  
+            if (match) {  
+              output = match[1].split("\n").slice(2, match[1].split("\n").length - 4).join("\n")
+            }
+  
+            editor.edit(editBuilder => {
+              editBuilder.replace(fullTextRange, output.replace("&gt;", ">"));
+            });
+        }
+        }
+
+        else {
+          const response = await fetch('https://tptp.org/cgi-bin/SystemOnTPTPFormReply', {
+            method: 'POST',
+            body: form
+          });
+          const resultHtml = await response.text();
+
+          const resultPanel = vscode.window.createWebviewPanel(
+            'tptpResult',
+            'TPTP Result',
+            vscode.ViewColumn.Two,
+            { enableScripts: true }
+          );
+
+          resultPanel.webview.html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <title>TPTP Prover Result</title>
+              <style>
+                .collapsable button { background-color: var(--vscode-activityBar-border) } 
+                h1 { text-decoration: underline; }
+                h2 { color: var(--vscode-editorLightBulb-foreground); }
+                pre { line-height: 20px; }
+                body { margin: 20px !important; }
+                span { background-color: var(--vscode-toolbar-hoverBackground); padding: 5px; border-radius: 10px; }
+                button {
+                  align-items: center;
+                  appearance: button;
+                  background-color: var(--vscode-focusBorder);
+                  border-radius: 8px;
+                  border-style: none;
+                  box-shadow: var(--vscode-chart-line) 0 1px 2px inset;
+                  box-sizing: border-box;
+                  color: #fff;
+                  cursor: pointer;
+                  display: flex;
+                  flex-direction: row;
+                  flex-shrink: 0;
+                  font-family: "Segoe UI", sans-serif;
+                  font-size: 100%;
+                  line-height: 1.15;
+                  margin: 0;
+                  padding: 10px 13px;
+                  text-align: center;
+                  text-transform: none;
+                  transition:
+                    color 0.13s ease-in-out,
+                    background 0.13s ease-in-out,
+                    opacity 0.13s ease-in-out,
+                    box-shadow 0.13s ease-in-out;
+                  user-select: none;
+                  -webkit-user-select: none;
+                  touch-action: manipulation;
+                }
+              </style>
+            </head>
+            <body>
+              <h1>TPTP Prover Result</h1>
+              <h2>Prover: <span>${userData.prover}</span></h2>
+              
+              ${resultHtml.replace('Loading IDV ... ', '')}
+              
+            </body>
+            </html>
+          `;
+        }
+
+      }
+    })
+  })
+
+  context.subscriptions.push(prepareProblem);
+
+  //@ PREPARE A PROBLEM THROUGH SYSTEMB4TPTP
+  const formatProblem = vscode.commands.registerCommand('tptp.formatProblem', async (uri: vscode.Uri) => {
     const editor = vscode.window.activeTextEditor;
 
     if (editor) {
@@ -178,7 +603,7 @@ export function activate(context: ExtensionContext) {
     
   })
 
-  context.subscriptions.push(prepareProblem);
+  context.subscriptions.push(formatProblem);
 
   //@ RUN A THEOREM THROUGH SYSTEMONTPTP                                              
   const proveProblem = vscode.commands.registerCommand('tptp.proveProblem', async (uri: vscode.Uri) => {
