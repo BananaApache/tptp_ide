@@ -158,6 +158,7 @@ The TPTP format is widely used in logic and automated reasoning. Learn more at [
 
 - Grammar implemented via a `tmLanguage.json` file
 - Uses TextMate scopes compatible with popular VS Code themes
+- **Development environment includes Husky pre-commit hooks with linting to ensure code quality and consistent formatting**
 - Lexer/grammar derived from an existing [BNF TPTP grammar](https://tptp.org/UserDocs/TPTPLanguage/SyntaxBNF.html)
 - Actively tested against a large sample of problems from the official TPTP problem library
 - Webview-based prover runner panel implemented with custom form UI to prove theorems
@@ -165,4 +166,9 @@ The TPTP format is widely used in logic and automated reasoning. Learn more at [
 
 ---
 
+## Contributing
+
+To maintain code quality, this project uses **Husky** for pre-commit hooks and **ESLint** for linting. Please ensure your code passes all linting checks before submitting a Pull Request.
+
+---
 **Enjoy using TPTP Editor!**
